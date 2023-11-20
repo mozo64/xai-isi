@@ -1,6 +1,10 @@
+from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 
 def process_primary_data(file_path: str) -> pd.DataFrame:
@@ -288,3 +292,69 @@ def plot_lime_importances(importances, best_model, label_encoders):
                 ha="center", fontsize=12)
 
     plt.show()
+
+
+def create_synthetic_samples(sample, num_samples=100, noise_level=0.1):
+    """
+    Create synthetic samples around a given sample by adding noise.
+    """
+    synthetic_samples = []
+    for _ in range(num_samples):
+        noise = np.random.normal(0, noise_level, sample.shape)
+        synthetic_sample = sample + noise
+        synthetic_samples.append(synthetic_sample)
+    return np.array(synthetic_samples)
+
+
+def fit_surrogate_model(X, y, max_depth=3):
+    """
+    Fit a decision tree surrogate model.
+    """
+    surrogate = DecisionTreeClassifier(max_depth=max_depth, random_state=42)
+    surrogate.fit(X, y)
+    return surrogate
+
+
+def visualize_tree(tree_model, feature_names, class_names):
+    """
+    Visualize the decision tree.
+    """
+    plt.figure(figsize=(20, 10))
+    plot_tree(tree_model, filled=True, feature_names=feature_names, class_names=class_names)
+    plt.show()
+
+
+def plot_feature_importance(model, feature_names):
+    """
+    Plot feature importance of the model.
+    """
+    importances = model.feature_importances_
+    indices = np.argsort(importances)
+    plt.title('Feature Importances')
+    plt.barh(range(len(indices)), importances[indices], color='b', align='center')
+    plt.yticks(range(len(indices)), [feature_names[i] for i in indices])
+    plt.xlabel('Relative Importance')
+    plt.show()
+
+
+def create_pivot_table(predictions: List[int], label_encoder: LabelEncoder) -> pd.DataFrame:
+    """
+    Converts numeric predictions to text labels and creates a pivot table.
+
+    Args:
+    predictions (List[int]): List of numeric predictions.
+    label_encoder (LabelEncoder): The LabelEncoder used for the target variable.
+
+    Returns:
+    pd.DataFrame: A pivot table with counts of each class.
+    """
+    # Convert numeric predictions to text labels
+    text_labels = label_encoder.inverse_transform(predictions)
+
+    # Create a pandas series from the text labels
+    label_series = pd.Series(text_labels)
+
+    # Generate a pivot table with counts for each class
+    pivot_table = label_series.value_counts().to_frame(name='Count')
+
+    return pivot_table
