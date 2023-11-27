@@ -5,6 +5,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import warnings
 
 NA = "<NA>"
 
@@ -431,4 +432,57 @@ def plot_histograms_and_boxplots(df: pd.DataFrame) -> None:
         else:
             print(f"Kolumna '{col}' jest pusta lub zawiera tylko wartości NaN.")
 
-# VERSION: 2024/11/27 - 15:40
+
+
+
+def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
+    """
+    Funkcja generuje wykresy słupkowe dla kolumn kategorycznych w DataFrame.
+
+    Args:
+    df (pd.DataFrame): DataFrame, dla którego mają być wygenerowane wykresy.
+    NA (str, optional): Reprezentacja brakujących danych. Domyślnie "<NA>".
+    """
+    print("\nWykresy słupkowe dla kolumn kategorycznych:")
+    categorical_columns = df.select_dtypes(include=['object']).columns
+
+    num_vars = len(categorical_columns)
+    num_rows = (num_vars + 2) // 3
+
+    fig, axes = plt.subplots(num_rows, 3, figsize=(20, 5 * num_rows))  # Zwiększona wysokość figury
+
+    for i, col in enumerate(categorical_columns):
+        row = i // 3
+        col_pos = i % 3
+
+        # Dodanie kategorii dla brakujących danych
+        temp_series = df[col].fillna(NA)
+
+        # Sortowanie etykiet według częstotliwości z wyjątkiem 'Brak danych'
+        order = temp_series.value_counts().index.tolist()
+        if NA in order:
+            order.remove(NA)
+            order.append(NA)
+
+        # Rysowanie wykresu słupkowego
+        sns.countplot(y=temp_series, ax=axes[row, col_pos], order=order)
+        wrapped_title = wrap_title(col)
+        axes[row, col_pos].set_title(f'\n{wrapped_title}')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            axes[row, col_pos].set_yticklabels(
+                [wrap_labels(label.get_text()) for label in axes[row, col_pos].get_yticklabels()])
+
+        axes[row, col_pos].set_ylabel('')  # Usunięcie nazwy osi y
+        axes[row, col_pos].set_xlabel('')  # Usunięcie nazwy osi x
+
+    # Ukrywanie pustych subplotów
+    for j in range(i + 1, num_rows * 3):
+        fig.delaxes(axes[j // 3, j % 3])
+
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
+    plt.show()
+
+
+# VERSION: 2024/11/27 - 15:56
