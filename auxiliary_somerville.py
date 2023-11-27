@@ -258,7 +258,7 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
         "In.general..how.similar.are.you.to.other.people.you.know": "jak.podobny.jesteś.do.innych.ludzi.których.znasz",
         "When.making.decisions..are.you.more.likely.to.seek.advice.or.decide.for.yourself": "czy.podejmując.decyzje.szukasz.rady.czy.sam.decydujesz",
         "How.satisfied.are.you.with.your.neighborhood": "jak.zadowolony.jesteś.z.twojej.okolicy",
-        "How.proud.are.you.to.be.a.Somerville.resident": "jak.dumny.jesteś.z.być.mieszkańcem.Somerville",
+        "How.proud.are.you.to.be.a.Somerville.resident": "jak.dumny.jesteś.z.bycia.mieszkańcem.Somerville",
         "How.would.you.rate.the.following..The.availability.of.information.about.city.services": "jak.oceniasz.następujące..dostępność.informacji.o.usługach.miejskich",
         "How.would.you.rate.the.following..The.availability.of.affordable.housing": "jak.oceniasz.następujące..dostępność.przystępnych.cenowo.mieszkań",
         "How.would.you.rate.the.following..The.cost.of.housing": "jak.oceniasz.następujące..koszt.mieszkań",
@@ -276,7 +276,7 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
         "What.is.your.gender": "jakiej.jesteś.płci",
         "Age": "wiek",
         "Marital.status": "stan.cywilny",
-        "Are.you.of.Hispanic..Latino..or.Spanish.origin": "czy.jesteś.pochodzenia.hiszpańskiego..latynoskiego.lub.hiszpańskiego",
+        "Are.you.of.Hispanic..Latino..or.Spanish.origin": "czy.jesteś.pochodzenia.hiszpańskiego.lub.latynoskiego",
         "What.is.your.race.or.ethnicity": "jakiej.jesteś.rasy.lub.etniczności",
         "Do.you.have.children.age.18.or.younger.who.live.with.you": "czy.masz.dzieci.w.wieku.do.18.lat.mieszkające.z.tobą",
         "Describe.your.housing.status.in.Somerville": "opisz.swój.status.mieszkaniowy.w.Somerville",
@@ -504,4 +504,4 @@ def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     plt.show()
 
 
-# VERSION: 2024/11/27 - 16:16
+# VERSION: 2024/11/27 - 21:02
