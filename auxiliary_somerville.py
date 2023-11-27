@@ -400,26 +400,30 @@ def plot_histograms_and_boxplots(df: pd.DataFrame) -> None:
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
 
     print("\nHistogramy i wykresy pudełkowe dla kolumn numerycznych:")
-    for col in numerical_columns:
+    for i, col in enumerate(numerical_columns):
         if df[col].notna().any():
+            print(f"Plot {i} out of {len(numerical_columns) - 1}, col: '{col}'")
             fig, axes = plt.subplots(1, 2, figsize=(16, 4))
 
             unique_values = df[col].dropna().unique()
             unique_values_rounded = np.round(unique_values)
             if len(unique_values) <= 10 and np.array_equal(unique_values, unique_values_rounded):
                 bins = len(np.unique(unique_values_rounded))
-                axes[0].xaxis.set_major_locator(ticker.MultipleLocator(1))
             else:
                 bins = 'auto'
 
             sns.histplot(df[col], kde=False, bins=bins, ax=axes[0])
-            axes[0].set_title(f'Histogram: {col}')
+            axes[0].set_title(f'{col}')  # Histogram
             axes[0].set_ylabel('')
             axes[0].set_xlabel('')
-            axes[0].xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.f'))
+
+            # Ustawienie formatowania osi X tylko wtedy, gdy liczba binów jest ograniczona
+            if bins != 'auto' and max(unique_values_rounded) - min(unique_values_rounded) <= 10:
+                axes[0].xaxis.set_major_locator(ticker.MultipleLocator(1))
+                axes[0].xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.f'))
 
             sns.boxplot(x=df[col], ax=axes[1])
-            axes[1].set_title(f'Boxplot: {col}')
+            axes[1].set_title(f'{col}')  # Boxplot
             axes[1].set_ylabel('')
             axes[1].set_xlabel('')
 
@@ -427,4 +431,4 @@ def plot_histograms_and_boxplots(df: pd.DataFrame) -> None:
         else:
             print(f"Kolumna '{col}' jest pusta lub zawiera tylko wartości NaN.")
 
-# VERSION: 2024/11/24 - 15:10
+# VERSION: 2024/11/27 - 15:40
