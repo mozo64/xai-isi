@@ -198,7 +198,19 @@ def translate_and_unify_categories(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def recode_one_hot_columns(df: pd.DataFrame, prefix: str, NA="<NA>") -> pd.DataFrame:
+def recode_one_hot_columns(df: pd.DataFrame, prefix: str, translations: dict = None, NA="<NA>") -> pd.DataFrame:
+    """
+    Funkcja przekształca kolumny one-hot w DataFrame na jedną kolumnę z wartościami kategorycznymi.
+
+    Args:
+    df (pd.DataFrame): DataFrame do przetworzenia.
+    prefix (str): Prefiks kolumn one-hot.
+    translations (dict, optional): Słownik tłumaczeń nazw kategorii.
+    NA (str, optional): Reprezentacja brakujących danych. Domyślnie "<NA>".
+
+    Returns:
+    pd.DataFrame: DataFrame z dodaną kolumną recoded.
+    """
     # Znajdź kolumny, które pasują do wzorca i są typu float64
     one_hot_columns = [col for col in df.columns if col.startswith(prefix) and df[col].dtype == 'float64']
 
@@ -206,7 +218,14 @@ def recode_one_hot_columns(df: pd.DataFrame, prefix: str, NA="<NA>") -> pd.DataF
     def recode_row(row):
         # Lista kategorii dla danego wiersza
         categories = [col.replace(prefix, '') for col in one_hot_columns if row[col] == 1.0]
-        return ', '.join(categories) if categories else NA
+        if translations:
+            try:
+                translated_categories = [translations[category] for category in categories]
+            except KeyError as e:
+                raise KeyError(f"Brak tłumaczenia dla kategorii: {e.args[0]}") from None
+            return ', '.join(translated_categories) if translated_categories else NA
+        else:
+            return ', '.join(categories) if categories else NA
 
     # Dodaj nową kolumnę do DataFrame
     df[f'{prefix}recoded'] = df.copy().apply(recode_row, axis=1)
@@ -485,4 +504,4 @@ def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     plt.show()
 
 
-# VERSION: 2024/11/27 - 15:56
+# VERSION: 2024/11/27 - 16:16
