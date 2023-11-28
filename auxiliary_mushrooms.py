@@ -127,15 +127,15 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
             'cap-shape': 'cap-shape--kształt-kapelusza',
             'cap-surface': 'cap-surface--powierzchnia-kapelusza',
             'cap-color': 'cap-color--kolor-kapelusza',
-            'does-bruise-or-bleed': 'does-bruise-or-bleed--siniaczenie-lub-krwawienie-w-reakcji-na-uszkodzenie',
-            'gill-attachment': 'gill-attachment--przyczepność-blaszek',
-            'gill-spacing': 'gill-spacing--rozmieszczenie-blaszek',
+            'does-bruise-or-bleed': 'does-bruise-or-bleed--zmienia-kolor-lub-puszcza-mleczko-w-reakcji-na-uszkodzenie',
+            'gill-attachment': 'gill-attachment--sposób-przyrastania-blaszek-do-trzonu',
+            'gill-spacing': 'gill-spacing--gęstość-blaszek',
             'gill-color': 'gill-color--kolor-blaszek',
-            'stem-root': 'stem-root--korzeń-trzonu',
+            'stem-root': 'stem-root--podstawa-trzonu',
             'stem-surface': 'stem-surface--powierzchnia-trzonu',
             'stem-color': 'stem-color--kolor-trzonu',
-            'veil-type': 'veil-type--typ-zarodni',
-            'veil-color': 'veil-color--kolor-zarodni',
+            'veil-type': 'veil-type--typ-hymenoforu',
+            'veil-color': 'veil-color--kolor-hymenoforu',
             'has-ring': 'has-ring--obecność-pierścienia',
             'ring-type': 'ring-type--typ-pierścienia',
             'spore-print-color': 'spore-print-color--kolor-zarodników',
@@ -151,35 +151,35 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
         # Polish translations for category levels
         class_dict_pl = {'poisonous': 'trujący', 'edibile': 'jadalny'}
         cap_shape_dict_pl = {'bell': 'dzwonkowaty', 'conical': 'stożkowaty', 'convex': 'wypukły', 'flat': 'płaski',
-                             'sunken': 'wklęsły', 'spherical': 'kulisty', 'others': 'inne'}
+                             'sunken': 'wklęsły', 'spherical': 'półkulisty', 'others': 'inne'}
         cap_surface_dict_pl = {'fibrous': 'włóknista', 'grooves': 'bruzdowana', 'scaly': 'łuskowata',
-                               'smooth': 'gładka', 'shiny': 'błyszcząca', 'leathery': 'skórzasta',
+                               'smooth': 'gładka', 'shiny': 'błyszcząca', 'leathery': 'zamszowa',
                                'silky': 'jedwabista', 'sticky': 'lepka', 'wrinkled': 'pomarszczona',
                                'fleshy': 'mięsista'}
         cap_color_dict_pl = {'brown': 'brązowy', 'buff': 'jasnobrązowy', 'gray': 'szary', 'green': 'zielony',
-                             'pink': 'różowy', 'purple': 'purpurowy', 'red': 'czerwony', 'white': 'biały',
+                             'pink': 'różowy', 'purple': 'fioletowy', 'red': 'czerwony', 'white': 'biały',
                              'yellow': 'żółty', 'blue': 'niebieski', 'orange': 'pomarańczowy', 'black': 'czarny'}
-        bruises_bleeding_dict_pl = {'bruises-or-bleeding': 'występują-siniaki-lub-krwawienie',
-                                    'no-bruises-or-bleeding': 'bez-siniaków-lub-krwawienia'}
-        gill_attachment_dict_pl = {'adnate': 'przylegające', 'adnexed': 'przyczepione', 'decurrent': 'zbiegające',
+        bruises_bleeding_dict_pl = {'bruises-or-bleeding': 'zmienia-kolor-lub-puszcza-mleczko',
+                                    'no-bruises-or-bleeding': 'nie-zmienia-koloru-lub-brak-mleczka'}
+        gill_attachment_dict_pl = {'adnate': 'przyrośnięte', 'adnexed': 'wykrojone', 'decurrent': 'zbiegające',
                                    'free': 'wolne', 'sinuate': 'faliste', 'pores': 'pory', 'none': 'brak',
                                    'unknown': 'nieznane'}
-        gill_spacing_dict_pl = {'close': 'ciasne', 'distant': 'rzadkie', 'none': 'brak'}
+        gill_spacing_dict_pl = {'close': 'gęste', 'distant': 'rzadkie', 'none': 'brak'}
         gill_color_dict_pl = {**cap_color_dict_pl, 'none': 'brak'}
-        stem_root_dict_pl = {'bulbous': 'bulwiasty', 'swollen': 'spuchnięty', 'club': 'maczugowaty',
-                             'cup': 'kubeczkowaty', 'equal': 'równy', 'rhizomorphs': 'strzępkokształtne',
-                             'rooted': 'ukorzeniony'}
+        stem_root_dict_pl = {'bulbous': 'bulwiasty', 'swollen': 'pękaty', 'club': 'maczugowaty',
+                             'cup': 'kubeczkowaty', 'equal': 'prosty', 'rhizomorphs': 'strzępkokształtny',
+                             'rooted': 'korzeniasty'}
         stem_surface_dict_pl = {**cap_surface_dict_pl, 'none': 'brak'}
         stem_color_dict_pl = {**cap_color_dict_pl, 'none': 'brak'}
-        veil_type_dict_pl = {'partial': 'częściowy', 'universal': 'uniwersalny'}
+        veil_type_dict_pl = {'partial': 'z-zasnówką', 'universal': 'bez-zasnówki'}
         veil_color_dict_pl = {**cap_color_dict_pl, 'none': 'brak'}
         has_ring_dict_pl = {'ring': 'pierścień', 'none': 'brak'}
-        ring_type_dict_pl = {'cobwebby': 'pajęczynowaty', 'evanescent': 'przemijający', 'flaring': 'rozchylający-się',
-                             'grooved': 'bruzdowany', 'large': 'duży', 'pendant': 'wiszący', 'sheathing': 'otulający',
-                             'zone': 'strefowy', 'scaly': 'łuskowaty', 'movable': 'ruchomy', 'none': 'brak',
+        ring_type_dict_pl = {'cobwebby': 'pajęczynowaty', 'evanescent': 'nietrwały', 'flaring': 'wzniesiony',
+                             'grooved': 'bruzdowany', 'large': 'duży', 'pendant': 'zwisający', 'sheathing': 'otulający',
+                             'zone': 'strefowany', 'scaly': 'łuskowaty', 'movable': 'wolny', 'none': 'brak',
                              'unknown': 'nieznany'}
         spore_print_color_dict_pl = {**cap_color_dict_pl}
-        habitat_dict_pl = {'grasses': 'trawy', 'leaves': 'liście', 'meadows': 'łąki', 'paths': 'ścieżki',
+        habitat_dict_pl = {'grasses': 'trawa', 'leaves': 'liście', 'meadows': 'łąki', 'paths': 'ścieżki',
                            'heaths': 'wrzosowiska', 'urban': 'miejskie', 'waste': 'odpady', 'woods': 'lasy'}
         season_dict_pl = {'spring': 'wiosna', 'summer': 'lato', 'autumn': 'jesień', 'winter': 'zima'}
 
@@ -417,3 +417,5 @@ def plot_custom_pdp_categorical(model, X, feature_name, label_encoder=None):
     plt.title(f'Partial Dependence Plot for {feature_name}')
     plt.xticks(rotation=45)  # Rotate labels for better readability
     plt.show()
+
+# VERSION: 2024/11/28 - 13:48
