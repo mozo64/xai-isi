@@ -262,9 +262,36 @@ def wrap_title(label):
     return '\n'.join(label.split('--')).replace('-', ' ')
 
 
-def wrap_labels(label):
-    return '\n'.join(label.split('--')).replace('-', '\n')
+def wrap_labels(label, max_words_per_line=7):
+    lines = '\n'.join(label.split('--')).replace('-', '\n')
+    words = lines.split('.')
+    return '\n'.join([' '.join(words[i:i + max_words_per_line]) for i in range(0, len(words), max_words_per_line)])
 
+
+def correlation_analysis(df: pd.DataFrame, high_corr_threshold=0.7):
+    df_copy = df.copy().dropna(axis=1, how='all')
+    df_copy = df_copy.loc[:, df_copy.nunique() > 1]
+
+    new_column_names = {col: wrap_labels(col, max_words_per_line=20) for col in df_copy.columns}
+    df_copy.rename(columns=new_column_names, inplace=True)
+
+    numeric_columns = df_copy.select_dtypes(include=[np.number]).columns.tolist()
+
+    corr_matrix = df_copy[numeric_columns].corr()
+
+    # Wyszukanie par zmiennych z wysoką korelacją
+    high_corrs = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+                  .stack()
+                  .reset_index())
+    high_corrs.columns = ['Variable 1', 'Variable 2', 'Correlation']
+    high_corrs = high_corrs[abs(high_corrs['Correlation']) > high_corr_threshold]
+
+    print("Pary zmiennych z wysoką korelacją:")
+    print(high_corrs)
+
+    plt.figure(figsize=(12 * 1, 8 * 1))
+    sns.heatmap(corr_matrix, annot=False, cmap='coolwarm')
+    plt.show()
 
 def plot_lime_importances(importances, best_model, label_encoders):
     # Odwracanie mapowania LabelEncoder dla kolumny 'klasa'
@@ -418,4 +445,55 @@ def plot_custom_pdp_categorical(model, X, feature_name, label_encoder=None):
     plt.xticks(rotation=45)  # Rotate labels for better readability
     plt.show()
 
-# VERSION: 2024/11/28 - 13:48
+
+def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
+    """
+    Funkcja generuje wykresy słupkowe dla kolumn kategorycznych w DataFrame.
+
+    Args:
+    df (pd.DataFrame): DataFrame, dla którego mają być wygenerowane wykresy.
+    NA (str, optional): Reprezentacja brakujących danych. Domyślnie "<NA>".
+    """
+    print("\nWykresy słupkowe dla kolumn kategorycznych:")
+    categorical_columns = df.select_dtypes(include=['object']).columns
+
+    num_vars = len(categorical_columns)
+    num_rows = (num_vars + 2) // 3
+
+    fig, axes = plt.subplots(num_rows, 3, figsize=(20, 5 * num_rows))  # Zwiększona wysokość figury
+
+    for i, col in enumerate(categorical_columns):
+        row = i // 3
+        col_pos = i % 3
+
+        # Dodanie kategorii dla brakujących danych
+        temp_series = df[col].fillna(NA)
+
+        # Sortowanie etykiet według częstotliwości z wyjątkiem 'Brak danych'
+        order = temp_series.value_counts().index.tolist()
+        if NA in order:
+            order.remove(NA)
+            order.append(NA)
+
+        # Rysowanie wykresu słupkowego
+        sns.countplot(y=temp_series, ax=axes[row, col_pos], order=order)
+        wrapped_title = wrap_title(col)
+        axes[row, col_pos].set_title(f'\n{wrapped_title}')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            axes[row, col_pos].set_yticklabels(
+                [wrap_labels(label.get_text()) for label in axes[row, col_pos].get_yticklabels()])
+
+        axes[row, col_pos].set_ylabel('')  # Usunięcie nazwy osi y
+        axes[row, col_pos].set_xlabel('')  # Usunięcie nazwy osi x
+
+    # Ukrywanie pustych subplotów
+    for j in range(i + 1, num_rows * 3):
+        fig.delaxes(axes[j // 3, j % 3])
+
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
+    plt.show()
+
+
+# VERSION: 2024/11/29 - 13:16
