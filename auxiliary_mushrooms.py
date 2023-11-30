@@ -1,8 +1,10 @@
+import warnings
 from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
@@ -293,6 +295,7 @@ def correlation_analysis(df: pd.DataFrame, high_corr_threshold=0.7):
     sns.heatmap(corr_matrix, annot=False, cmap='coolwarm')
     plt.show()
 
+
 def plot_lime_importances(importances, best_model, label_encoders):
     # Odwracanie mapowania LabelEncoder dla kolumny 'klasa'
     # Uzyskanie etykiet klas zwracanych przez model
@@ -495,5 +498,4 @@ def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
     plt.show()
 
-
-# VERSION: 2024/11/29 - 13:16
+# VERSION: 2024/11/30 - 12:25
