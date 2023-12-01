@@ -1,4 +1,3 @@
-import warnings
 from typing import List
 
 import matplotlib.pyplot as plt
@@ -430,13 +429,14 @@ def plot_custom_pdp(model, X, feature_name, num_points=20):
     plt.show()
 
 
-def plot_numerical_distributions(df: pd.DataFrame) -> None:
+def plot_numerical_distributions(df: pd.DataFrame, observation_index=None) -> None:
     """
     Generates histograms and box plots for numerical columns in a DataFrame.
+    Optionally adds a vertical line for a specified observation.
 
     Args:
     df: DataFrame containing the data.
-    numerical_columns: List of numerical column names in the DataFrame.
+    observation_index: Index of the observation to highlight (optional).
     """
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
 
@@ -449,61 +449,82 @@ def plot_numerical_distributions(df: pd.DataFrame) -> None:
         axes[0].set_ylabel('')
         axes[0].set_xlabel('')
 
+        if observation_index is not None and col in df.columns:
+            observation_value = df.iloc[observation_index][col]
+            axes[0].axvline(observation_value, color='red', linestyle='--')
+
         sns.boxplot(x=df[col], ax=axes[1])
         axes[1].set_title(f'Box Plot for {col}')
         axes[1].set_ylabel('')
         axes[1].set_xlabel('')
 
+        if observation_index is not None and col in df.columns:
+            axes[1].axvline(observation_value, color='red', linestyle='--')
+
         plt.show()
 
 
-def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
+def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, target_name=None, observation_index=None,
+                             NA: str = "<NA>") -> None:
     """
-    Funkcja generuje wykresy słupkowe dla kolumn kategorycznych w DataFrame.
+    Generates bar plots for categorical columns in a DataFrame.
+    Optionally highlights the bar corresponding to a specified observation.
 
     Args:
-    df (pd.DataFrame): DataFrame, dla którego mają być wygenerowane wykresy.
-    NA (str, optional): Reprezentacja brakujących danych. Domyślnie "<NA>".
+    df (pd.DataFrame): DataFrame for which the plots are to be generated.
+    observation_index (int, optional): Index of the observation to highlight.
+    NA (str, optional): Representation for missing data. Defaults to "<NA>".
     """
-    print("\nWykresy słupkowe dla kolumn kategorycznych:")
+
+    if y_df is not None and label_encoder is not None and target_name is not None:
+        inverse_label_map = {v: k for v, k in enumerate(label_encoder.classes_)}
+        df[target_name] = np.vectorize(inverse_label_map.get)(y_df)
+        cols = [target_name] + [col for col in df.columns if col != target_name]
+        df = df[cols]
+
+    print("\nBar Plots for Categorical Columns:")
     categorical_columns = df.select_dtypes(include=['object']).columns
 
     num_vars = len(categorical_columns)
     num_rows = (num_vars + 2) // 3
 
-    fig, axes = plt.subplots(num_rows, 3, figsize=(20, 5 * num_rows))  # Zwiększona wysokość figury
+    fig, axes = plt.subplots(num_rows, 3, figsize=(20, 5 * num_rows))  # Increased figure height
 
     for i, col in enumerate(categorical_columns):
         row = i // 3
         col_pos = i % 3
 
-        # Dodanie kategorii dla brakujących danych
+        # Adding category for missing data
         temp_series = df[col].fillna(NA)
 
-        # Sortowanie etykiet według częstotliwości z wyjątkiem 'Brak danych'
+        # Sorting labels by frequency except for 'Missing data'
         order = temp_series.value_counts().index.tolist()
         if NA in order:
             order.remove(NA)
             order.append(NA)
 
-        # Rysowanie wykresu słupkowego
+        # Drawing the bar plot
         sns.countplot(y=temp_series, ax=axes[row, col_pos], order=order)
-        wrapped_title = wrap_title(col)
-        axes[row, col_pos].set_title(f'\n{wrapped_title}')
+        axes[row, col_pos].set_title(f'\n{col}')
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            axes[row, col_pos].set_yticklabels(
-                [wrap_labels(label.get_text()) for label in axes[row, col_pos].get_yticklabels()])
+        # Highlighting the bar for the selected observation
+        if observation_index is not None and col in df.columns:
+            observation_value = df.iloc[observation_index][col]
+            if pd.isna(observation_value):
+                observation_value = NA
+            for bar, label in zip(axes[row, col_pos].patches, order):
+                if label == observation_value:
+                    bar.set_color('red')
 
-        axes[row, col_pos].set_ylabel('')  # Usunięcie nazwy osi y
-        axes[row, col_pos].set_xlabel('')  # Usunięcie nazwy osi x
+        axes[row, col_pos].set_ylabel('')  # Removing y-axis label
+        axes[row, col_pos].set_xlabel('')  # Removing x-axis label
 
-    # Ukrywanie pustych subplotów
+    # Hiding empty subplots
     for j in range(i + 1, num_rows * 3):
         fig.delaxes(axes[j // 3, j % 3])
 
-    plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Increased spacing between rows and columns
     plt.show()
 
-# VERSION: 2024/12/01 - 07:58
+
+# VERSION: 2024/12/01 - 13:49
