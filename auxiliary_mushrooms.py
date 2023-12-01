@@ -430,6 +430,33 @@ def plot_custom_pdp(model, X, feature_name, num_points=20):
     plt.show()
 
 
+def plot_numerical_distributions(df: pd.DataFrame) -> None:
+    """
+    Generates histograms and box plots for numerical columns in a DataFrame.
+
+    Args:
+    df: DataFrame containing the data.
+    numerical_columns: List of numerical column names in the DataFrame.
+    """
+    numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+
+    print("\nHistograms and Box Plots for Numerical Columns:")
+    for col in numerical_columns:
+        fig, axes = plt.subplots(1, 2, figsize=(16, 4))
+
+        sns.histplot(df[col], kde=True, ax=axes[0])
+        axes[0].set_title(f'Histogram for {col}')
+        axes[0].set_ylabel('')
+        axes[0].set_xlabel('')
+
+        sns.boxplot(x=df[col], ax=axes[1])
+        axes[1].set_title(f'Box Plot for {col}')
+        axes[1].set_ylabel('')
+        axes[1].set_xlabel('')
+
+        plt.show()
+
+
 def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     """
     Funkcja generuje wykresy słupkowe dla kolumn kategorycznych w DataFrame.
@@ -479,4 +506,4 @@ def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
     plt.show()
 
-# VERSION: 2024/12/01 - 07:43
+# VERSION: 2024/12/01 - 07:58
