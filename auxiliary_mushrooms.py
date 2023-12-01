@@ -392,16 +392,24 @@ def create_pivot_table(predictions: List[int], label_encoder: LabelEncoder) -> p
 
 def plot_custom_pdp(model, X, feature_name, num_points=20):
     """
-    Plots a custom Partial Dependency Plot for a single feature.
+    Plots a custom Partial Dependency Plot for a single numerical or categorical feature.
 
     Args:
     model: Trained model object.
     X: DataFrame, features used for training or testing the model.
-    feature_name: Name of the feature for which PDP is to be plotted.
-    num_points: Number of points to plot along the feature axis.
+    feature_name: Name of the categorical feature for which PDP is to be plotted.
+    label_encoder: LabelEncoder object used for encoding the categorical feature.
     """
-    feature_index = X.columns.tolist().index(feature_name)
-    feature_values = np.linspace(X[feature_name].min(), X[feature_name].max(), num_points)
+    is_categorical = X[feature_name].dtype == 'object' or X[feature_name].dtype.name == 'category'
+
+    if is_categorical:
+        # Dla zmiennych kategorycznych użyj unikalnych wartości
+        feature_values = X[feature_name].unique()
+        num_points = len(feature_values)
+    else:
+        # Dla zmiennych numerycznych generuj równomiernie rozłożone wartości
+        feature_values = np.linspace(X[feature_name].min(), X[feature_name].max(), num_points)
+
     feature_grid = np.array([feature_values, ] * X.shape[0]).transpose()
     X_copy = X.copy()
     pdp_values = []
@@ -410,42 +418,15 @@ def plot_custom_pdp(model, X, feature_name, num_points=20):
         X_copy[feature_name] = feature_grid[i]
         pdp_values.append(model.predict_proba(X_copy)[:, 1].mean())
 
-    plt.plot(feature_values, pdp_values)
-    plt.xlabel(feature_name)
-    plt.ylabel('Partial Dependence')
-    plt.title(f'Partial Dependence Plot for {feature_name}')
-    plt.show()
-
-
-def plot_custom_pdp_categorical(model, X, feature_name, label_encoder=None):
-    """
-    Plots a custom Partial Dependency Plot for a single categorical feature.
-
-    Args:
-    model: Trained model object.
-    X: DataFrame, features used for training or testing the model.
-    feature_name: Name of the categorical feature for which PDP is to be plotted.
-    label_encoder: LabelEncoder object used for encoding the categorical feature.
-    """
-    unique_categories = X[feature_name].unique()
-    pdp_values = []
-
-    for category in unique_categories:
-        X_copy = X.copy()
-        X_copy[feature_name] = category
-        pdp_values.append(model.predict_proba(X_copy)[:, 1].mean())
-
-    # If label_encoder is provided, convert categories back to original labels
-    if label_encoder:
-        category_labels = [label_encoder.inverse_transform([cat])[0] for cat in unique_categories]
+    if is_categorical:
+        plt.bar(range(num_points), pdp_values)
+        plt.xticks(range(num_points), feature_values, rotation=90)  # Ustawienie etykiet osi X
     else:
-        category_labels = unique_categories
+        plt.plot(feature_values, pdp_values)
 
-    plt.bar(category_labels, pdp_values)
     plt.xlabel(feature_name)
     plt.ylabel('Partial Dependence')
     plt.title(f'Partial Dependence Plot for {feature_name}')
-    plt.xticks(rotation=45)  # Rotate labels for better readability
     plt.show()
 
 
@@ -498,4 +479,4 @@ def plot_categorical_columns(df: pd.DataFrame, NA: str = "<NA>") -> None:
     plt.subplots_adjust(hspace=0.6, wspace=0.4)  # Zwiększony odstęp między wierszami i kolumnami
     plt.show()
 
-# VERSION: 2024/11/30 - 12:25
+# VERSION: 2024/12/01 - 07:43
