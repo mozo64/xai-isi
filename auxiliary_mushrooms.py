@@ -1,9 +1,11 @@
+import random
 from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import shap
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
@@ -527,4 +529,56 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
     plt.show()
 
 
-# VERSION: 2024/12/01 - 13:49
+def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, class_label):
+    """
+    Plots a SHAP waterfall chart for a randomly selected observation from a specified class.
+
+    Args:
+    model: The trained model (Pipeline).
+    X: Test or train.
+    y: y labels.
+    explainer: SHAP explainer object.
+    class_label: The class label (0 or 1) for which to generate the plot.
+    feature_names: List of feature names.
+    """
+    # Transforming the data
+    transformed_X = model[:-1].transform(X)
+
+    # Selecting a random observation from the specified class
+    class_indices = np.where(y == class_label)[0]
+    selected_index = random.choice(class_indices)
+    selected_observation = transformed_X[selected_index]
+
+    # Reshaping the selected observation if necessary
+    if isinstance(selected_observation, np.ndarray):
+        X_sample_for_shap = transformed_X
+    else:
+        X_sample_for_shap = selected_observation.toarray()
+
+    numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
+    categorical_features = X.select_dtypes(include=['object']).columns
+
+    a_feature_names = model.named_steps['preprocessor'].transformers_[0][1].get_feature_names_out(
+        numeric_features).tolist() + \
+                      model.named_steps['preprocessor'].transformers_[1][1].named_steps['onehot'].get_feature_names_out(
+                          categorical_features).tolist()
+
+    # Calculating SHAP values for the selected observation
+    shap_explanation = explainer(X_sample_for_shap)
+    # Creating an Explanation object with feature names
+    shap_values_single = shap_explanation[0]
+    shap_values_single = shap.Explanation(values=shap_values_single.values,
+                                          base_values=shap_values_single.base_values,
+                                          data=shap_values_single.data,
+                                          feature_names=a_feature_names)
+
+    # Getting the class name from label encoder
+    class_name = label_encoder.inverse_transform([class_label])[0]
+
+    # Visualizing SHAP values for the selected observation
+    plt.title(f"SHAP Waterfall Plot for Class '{class_name}'")
+    shap.plots.waterfall(shap_values_single)
+
+    return selected_index
+
+# VERSION: 2024/12/01 - 13:54
