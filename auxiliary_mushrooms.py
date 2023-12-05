@@ -399,7 +399,6 @@ def plot_custom_pdp(model, X, feature_name, num_points=20):
     model: Trained model object.
     X: DataFrame, features used for training or testing the model.
     feature_name: Name of the categorical feature for which PDP is to be plotted.
-    label_encoder: LabelEncoder object used for encoding the categorical feature.
     """
     is_categorical = X[feature_name].dtype == 'object' or X[feature_name].dtype.name == 'category'
 
