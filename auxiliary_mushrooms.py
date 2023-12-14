@@ -1050,4 +1050,85 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
             else:
                 print(f"  {feature_display:40}\t{original_value}")
 
-# VERSION: 2024/12/14 - 12:08
+
+def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable_label, class_label):
+    """
+    Plots a SHAP waterfall chart for a randomly selected observation from a specified class.
+
+    Args:
+    model: The trained model (Pipeline).
+    X: Test or train.
+    y: y labels.
+    explainer: SHAP explainer object.
+    class_label: The class label (0 or 1) for which to generate the plot.
+    feature_names: List of feature names.
+    """
+    # Transforming the data
+    transformed_X = model[:-1].transform(X)
+
+    # Selecting a random observation from the specified class
+    class_indices = np.where(y == class_label)[0]
+    selected_index = random.choice(class_indices)
+    selected_observation = transformed_X[selected_index]
+
+    # Reshaping the selected observation if necessary
+    if isinstance(selected_observation, np.ndarray):
+        X_sample_for_shap = transformed_X
+    else:
+        X_sample_for_shap = selected_observation.toarray()
+
+    numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
+    categorical_features = X.select_dtypes(include=['object']).columns
+
+    a_feature_names = model.named_steps['preprocessor'].transformers_[0][1].get_feature_names_out(
+        numeric_features).tolist() + \
+                      model.named_steps['preprocessor'].transformers_[1][1].named_steps['onehot'].get_feature_names_out(
+                          categorical_features).tolist()
+
+    # Calculating SHAP values for the selected observation
+    shap_explanation = explainer(X_sample_for_shap)
+    # Creating an Explanation object with feature names
+    shap_values_single = shap_explanation[0]
+    shap_values_single = shap.Explanation(values=shap_values_single.values,
+                                          base_values=shap_values_single.base_values,
+                                          data=shap_values_single.data,
+                                          feature_names=a_feature_names)
+
+    # Getting the class name from label encoder
+    class_name = label_encoder.inverse_transform([class_label])[0]
+
+    # Przewidywanie klasy dla wybranej obserwacji
+    predicted_class = model.predict(X.iloc[[selected_index]])[0]
+    predicted_class_name = label_encoder.inverse_transform([predicted_class])[0]
+
+    # Visualizing SHAP values for the selected observation
+    # Generowanie wykresu SHAP "waterfall"
+    shap.plots.waterfall(shap_values_single, show=False)
+
+    # Zmiana tytułu wykresu
+    plt.title(f"Analiza wpływu cech na przewidywanie klasy '{predicted_class_name}' (prawdziwa klasa: '{class_name}')")
+    this_class, opposite_class = ("jadalnego", "trującego") if predicted_class == eatable_label else (
+        "trującego", "jadalnego")
+    # Zmiana opisu osi X
+    # plt.xlabel('Wpływ cechy na odchylenie od średniej oczekiwanej wartości wyniku modelu, \noznaczonej E[f(X)] na końcowy wynik modelu, oznaczony f(X). \nSłupki "w prawo" oznaczają zwiększenie wpływu modelu \nna klasyfikację jako grzyb trujący, w lewo jadalny')
+    # plt.xlabel(
+    #     'Wkład poszczególnych cech w przewidywanie klasy grzyba przez model. '
+    #     f'\nWartości pozytywne (w prawo): wpływ cechy na klasyfikację grzyba {this_class}, '
+    #     f'\nWartości negatywne (w lewo):  wpływ cechy na klasyfikację grzyba {opposite_class}. '
+    #     f'\nŚrednia przewidywana wartość wyniku modelu to E[f(X)], a końcowy wynik dla tej obserwacji to f(X). ')
+    plt.xlabel('Wkład poszczególnych cech w przewidywanie klasy grzyba przez model. '
+               f'\nWartości pozytywne (w prawo) wskazują na wzrost prawdopodobieństwa \nklasyfikacji jako {this_class} '
+               'wg modelu, wartości negatywne (w lewo) - na zmniejszenie. '
+               '\nE[f(X)] to średni wynik modelu, a f(X) to przewidywanie dla tej obserwacji.\n')
+
+    # Przeszukanie i modyfikacja wszystkich obiektów tekstowych w wykresie
+    for text_obj in plt.gcf().findobj(lambda obj: isinstance(obj, plt.Text)):
+        if text_obj.get_text().startswith('f(x)'):
+            original_value = text_obj.get_text().split('=')[1]  # Zachowanie oryginalnej wartości
+            text_obj.set_text(f'Końcowy wynik modelu: {original_value.strip()}')
+
+    plt.show()
+
+    return selected_index
+
+# VERSION: 2024/12/14 - 14:06
