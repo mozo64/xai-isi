@@ -836,7 +836,6 @@ def get_decoded_feature(feature, categorical_features, category_encodings):
 
 def plot_lime_importances(importances, model, categorical_features, category_encodings, label_encoder):
     class_labels = model.named_steps['classifier'].classes_
-    positive_class_label = class_labels[1]
 
     # Dekodowanie wartości
     decoded_importances = {}
@@ -844,15 +843,24 @@ def plot_lime_importances(importances, model, categorical_features, category_enc
         decoded_feature = get_decoded_feature(feature, categorical_features, category_encodings)
         decoded_importances[decoded_feature] = importance
 
-    sorted_features = sorted(decoded_importances.items(), key=lambda x: x[1], reverse=True)
+    # Filtrowanie cech o niskim znaczeniu
+    sorted_features = {feature: score for feature, score in
+                       sorted(decoded_importances.items(), key=lambda x: x[1], reverse=True) if abs(score) > 0.01}
+    features, scores = zip(*sorted_features.items())
 
-    features, scores = zip(*sorted_features)
+    plt.figure(figsize=(12, 8))
+    bars = plt.barh(features, scores, color='green')  # Zmiana koloru słupków
+    # plt.xlabel('Średnie znaczenie cechy (jadalny <- | -> trujący)')
+    plt.title('Wpływ cech na predykcję klasyfikacji grzybów na podstawie LIME')
 
-    plt.figure(figsize=(10, 12))
-    plt.barh(features, scores)
-    plt.xlabel('Średnie znaczenie cechy')
-    plt.title('Globalne znaczenia cech z LIME')
-    plt.gca().invert_yaxis()  # Odwrócenie osi y, aby najważniejsze cechy były na górze
+    # Odwrócenie osi y, aby najważniejsze cechy były na górze
+    plt.gca().invert_yaxis()
+
+    # Dodanie wartości na końcach słupków
+    for bar in bars:
+        width = bar.get_width()
+        label_x_pos = width if width > 0 else width - 0.006  # Dostosuj wartość, aby etykiety były bliżej słupków
+        plt.text(label_x_pos, bar.get_y() + bar.get_height() / 2, f'{width:.2f}', va='center')
 
     # Odwracanie mapowania LabelEncoder dla kolumny target
     inverse_label_map = {v: k for v, k in enumerate(label_encoder.classes_)}
@@ -861,10 +869,13 @@ def plot_lime_importances(importances, model, categorical_features, category_enc
     positive_class_index = np.argmax(model.classes_)
     positive_class_label = inverse_label_map[positive_class_index]
 
-    plt.figtext(0.5, 0.05, f"Wartości dodatnie na wykresie kontrybuują do klasy \"{positive_class_label}\"",
-                ha="center", fontsize=12)
+    plt.figtext(0.13, 0.05, f"jadalny", ha="left", fontsize=10)
+    plt.figtext(0.9, 0.05, f"{positive_class_label}", ha="right", fontsize=10)
+    plt.figtext(0.5, 0.05, f" - większe prawdopodbieństwo klasy -", ha="center", fontsize=10)
 
     plt.show()
+
+    return sorted_features
 
 
 def model_predict(model, data: np.ndarray, feature_names: list, categorical_features: list, label_encoders: dict,
@@ -1131,4 +1142,4 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
 
     return selected_index
 
-# VERSION: 2024/12/14 - 14:06
+# VERSION: 2024/12/14 - 14:46
