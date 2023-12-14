@@ -1,4 +1,6 @@
+import os
 import random
+import re
 from typing import List
 
 import matplotlib.pyplot as plt
@@ -6,8 +8,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import shap
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+print(os.getcwd())
 
 
 def process_primary_data(file_path: str) -> pd.DataFrame:
@@ -589,4 +594,460 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, class_l
 
     return selected_index
 
-# VERSION: 2024/12/14 - 07:02
+
+def decode_categorical_features(encoded_data, categorical_features, category_encodings):
+    # Funkcja do dekodowania danych kategorycznych
+    decoded_data = encoded_data.copy()
+    for feature in categorical_features:
+        inv_map = {v: k for k, v in category_encodings[feature].items()}
+        decoded_data[feature] = encoded_data[feature].map(inv_map)
+    return decoded_data
+
+
+def predict_proba_wrapper(model, encoded_data, categorical_features, category_encodings):
+    # Funkcja, która dekoduje dane kategoryczne i wywołuje predict_proba
+    decoded_data = decode_categorical_features(encoded_data, categorical_features, category_encodings)
+    return model.predict_proba(decoded_data)
+
+
+def calculate_global_importances_decoded(sample_indices, explainer, X_test_encoded, model, feature_names,
+                                         categorical_features,
+                                         category_encodings):
+    lime_weights = []
+    for i in sample_indices:
+        # Przekształcenie pojedynczego wiersza z powrotem w DataFrame
+        single_row_df = X_test_encoded.iloc[i:i + 1]
+
+        exp = explainer.explain_instance(single_row_df.values[0],
+                                         lambda x: predict_proba_wrapper(model,
+                                                                         pd.DataFrame(x, columns=single_row_df.columns),
+                                                                         categorical_features, category_encodings),
+                                         num_features=len(feature_names))
+        lime_weights.append(exp.as_list())
+
+    feature_importances = {}
+    for feature_weight in lime_weights:
+        for feature, weight in feature_weight:
+            if feature in feature_importances:
+                feature_importances[feature] += weight
+            else:
+                feature_importances[feature] = weight
+
+    normalized_importances = {k: v / len(sample_indices) for k, v in feature_importances.items()}
+    return normalized_importances
+
+
+def encode_categorical_features(raw_data, categorical_features, category_encodings):
+    # Funkcja do enkodowania danych kategorycznych
+    encoded_data = raw_data.copy()
+    for feature in categorical_features:
+        # print(feature)
+        encoded_data[feature] = raw_data[feature].map(category_encodings[feature])
+    return encoded_data
+
+
+def predict_proba_func(classifier, data):
+    # Funkcja, która przetwarza dane i wywołuje predict_proba
+    return classifier.predict_proba(data)
+
+
+def calculate_global_importances(sample_indices, explainer, X_test_transformed, classifier, feature_names_transformed):
+    lime_weights = []
+    for i in sample_indices:
+        exp = explainer.explain_instance(X_test_transformed[i], lambda x: predict_proba_func(classifier, x),
+                                         num_features=len(feature_names_transformed))
+        lime_weights.append(exp.as_list())
+
+    feature_importances = {}
+    for feature_weight in lime_weights:
+        for feature, weight in feature_weight:
+            if feature in feature_importances:
+                feature_importances[feature] += weight
+            else:
+                feature_importances[feature] = weight
+
+    normalized_importances = {k: v / len(sample_indices) for k, v in feature_importances.items()}
+    return normalized_importances
+
+
+def generate_counterfactuals(index, instance, dice_explainer, feature_names: list, d, total_CFs=2,
+                             desired_class="opposite"):
+    """
+    Generates counterfactual examples for a given observation.
+
+    :param index: Index of the observation.
+    :param instance: DataFrame with the observation data.
+    :param total_CFs: Total number of counterfactuals to generate.
+    :param desired_class: Desired class for the counterfactuals.
+    :return: Counterfactual examples.
+    """
+
+    # Ensure data is a DataFrame
+    if isinstance(instance, np.ndarray):
+        instance = pd.DataFrame(instance.reshape(1, -1), columns=feature_names)
+    elif isinstance(instance, pd.Series):
+        instance = instance.to_frame().transpose()
+
+    # Converting instance to the format required by DiCE
+    query_instance = d.prepare_query_instance(query_instance=instance)
+    query_instance = query_instance.iloc[0].to_dict()
+    print(query_instance)
+
+    # Generating counterfactuals
+    counterfactuals = dice_explainer.generate_counterfactuals(instance, total_CFs=total_CFs,
+                                                              desired_class=desired_class)
+
+    # Visualizing the counterfactuals
+    print(f"Counterfactuals for observation {index} and class {desired_class}:")
+    counterfactuals.visualize_as_dataframe(show_only_changes=True)
+    return counterfactuals
+
+
+def train_imputers(X_train, numeric_features, categorical_features):
+    """
+    Trains imputers on the training data.
+
+    :param X_train: DataFrame of training data.
+    :param numeric_features: List of numeric feature names.
+    :param categorical_features: List of categorical feature names.
+    :return: Tuple of trained numeric and categorical imputers.
+    """
+    # Imputer for numeric features
+    numeric_imputer = SimpleImputer(strategy='mean')
+    numeric_imputer.fit(X_train[numeric_features])
+
+    # Imputer for categorical features
+    categorical_imputer = SimpleImputer(strategy='most_frequent')
+    categorical_imputer.fit(X_train[categorical_features])
+
+    return numeric_imputer, categorical_imputer
+
+
+def impute_observation(observation, numeric_imputer, categorical_imputer, numeric_features, categorical_features):
+    """
+    Imputes missing values in a single observation.
+
+    :param observation: DataFrame or Series with a single observation.
+    :param numeric_imputer: Trained imputer for numeric features.
+    :param categorical_imputer: Trained imputer for categorical features.
+    :param numeric_features: List of numeric feature names.
+    :param categorical_features: List of categorical feature names.
+    :return: DataFrame or Series with imputed values.
+    """
+    if isinstance(observation, pd.Series):
+        observation = observation.to_frame().transpose()
+
+    # Impute numeric features
+    observation[numeric_features] = numeric_imputer.transform(observation[numeric_features])
+
+    # Impute categorical features
+    observation[categorical_features] = categorical_imputer.transform(observation[categorical_features])
+
+    return observation
+
+
+def parse_feature_importance(feature_importance_str):
+    regex = r"([0-9.]+)?\s*([<>=]+)?\s*([\w-]+(?:[\w-]*[\w-]+)*)\s*([<>=]+)?\s*([0-9.]+)?"
+    match = re.match(regex, feature_importance_str)
+
+    if match:
+        l_value = float(match.group(1)) if match.group(1) else None
+        l_operator = match.group(2) if match.group(2) else None
+        feature_name = match.group(3)
+        r_operator = match.group(4) if match.group(4) else None
+        r_value = float(match.group(5)) if match.group(5) else None
+
+        return feature_name, l_value, l_operator, r_value, r_operator
+    else:
+        return None, None, None, None, None
+
+
+def get_decoded_feature(feature, categorical_features, category_encodings):
+    feature_name, l_value, l_operator, r_value, r_operator = parse_feature_importance(feature)
+    # print(f"feature_name= {feature_name}")
+    # print(f"l_operator= {l_operator}")
+    # print(f"l_value= {l_value}")
+    # print(f"r_operator= {r_operator}")
+    # print(f"r_value= {r_value}")
+
+    if feature_name in categorical_features:
+        category_mapping = category_encodings[feature_name]
+        reverse_mapping = {v: k for k, v in category_mapping.items()}
+
+        # Obsługa przypadku z jednym warunkiem
+        if l_value is None or r_value is None:
+            if l_value is not None:
+                l_index = int(float(l_value))
+                if l_operator == '<':
+                    value_range = list(range(l_index + 1, len(reverse_mapping)))
+                elif l_operator == '<=':
+                    value_range = list(range(l_index, len(reverse_mapping)))
+                elif l_operator == '>':
+                    value_range = list(range(0, l_index))
+                elif l_operator == '>=':
+                    value_range = list(range(0, l_index + 1))
+                else:
+                    raise Exception
+
+            if r_value is not None:
+                r_index = int(float(r_value))
+                if r_operator == '>':
+                    value_range = list(range(r_index + 1, len(reverse_mapping)))
+                elif r_operator == '>=':
+                    value_range = list(range(r_index, len(reverse_mapping)))
+                elif r_operator == '<':
+                    value_range = list(range(0, r_index))
+                elif r_operator == '<=':
+                    value_range = list(range(0, r_index + 1))
+                else:
+                    raise Exception
+
+        # Obsługa przypadku z dwoma warunkami
+        else:
+            if l_operator in ('<', '<=') and r_operator in ('<', '<='):
+                l_index = int(float(l_value)) + (1 if l_operator == '<' else 0)
+                r_index = int(float(r_value)) - (1 if r_operator == '<' else 0)
+            elif l_operator in ('>', '>=') and r_operator in ('>', '>='):
+                r_index = int(float(l_value)) - (1 if l_operator == '>' else 0)
+                l_index = int(float(r_value)) + (1 if r_operator == '>' else 0)
+            else:
+                raise Exception
+            value_range = list(range(l_index, r_index + 1))
+
+        # print(f"Przedział dla {feature_name}: {value_range}")
+
+        # Dekodowanie wartości
+        decoded_values = []
+        for idx in value_range:
+            if idx in reverse_mapping:
+                value = reverse_mapping[idx]
+                if pd.isna(value):  # Sprawdzenie, czy wartość jest NaN
+                    decoded_values.append("brak-danych")
+                else:
+                    decoded_values.append(value)
+            else:
+                decoded_values.append("brak-danych")
+        decoded_feature = f"{feature_name} == {{{', '.join(decoded_values)}}}"
+    else:
+        decoded_feature = feature
+
+    return decoded_feature
+
+
+def plot_lime_importances(importances, model, categorical_features, category_encodings, label_encoder):
+    class_labels = model.named_steps['classifier'].classes_
+    positive_class_label = class_labels[1]
+
+    # Dekodowanie wartości
+    decoded_importances = {}
+    for feature, importance in importances.items():
+        decoded_feature = get_decoded_feature(feature, categorical_features, category_encodings)
+        decoded_importances[decoded_feature] = importance
+
+    sorted_features = sorted(decoded_importances.items(), key=lambda x: x[1], reverse=True)
+
+    features, scores = zip(*sorted_features)
+
+    plt.figure(figsize=(10, 12))
+    plt.barh(features, scores)
+    plt.xlabel('Średnie znaczenie cechy')
+    plt.title('Globalne znaczenia cech z LIME')
+    plt.gca().invert_yaxis()  # Odwrócenie osi y, aby najważniejsze cechy były na górze
+
+    # Odwracanie mapowania LabelEncoder dla kolumny target
+    inverse_label_map = {v: k for v, k in enumerate(label_encoder.classes_)}
+
+    # Sprawdzanie, która klasa jest klasą pozytywną
+    positive_class_index = np.argmax(model.classes_)
+    positive_class_label = inverse_label_map[positive_class_index]
+
+    plt.figtext(0.5, 0.05, f"Wartości dodatnie na wykresie kontrybuują do klasy \"{positive_class_label}\"",
+                ha="center", fontsize=12)
+
+    plt.show()
+
+
+def model_predict(model, data: np.ndarray, feature_names: list, categorical_features: list, label_encoders: dict,
+                  NA: str = "<NA>") -> np.ndarray:
+    """
+    Wrapper function for model prediction.
+
+    :param model: Trained sklearn Pipeline.
+    :param data: Data to predict on.
+    :param feature_names: List of all feature names.
+    :param categorical_features: List of categorical feature names.
+    :param label_encoders: Dictionary of label encoders for categorical features.
+    :return: Model predictions.
+    """
+    # Ensure data is a 2D array
+    if data.ndim == 1:
+        data = data.reshape(1, -1)
+
+    # Convert the numpy array to DataFrame for easier manipulation
+    data_df = pd.DataFrame(data, columns=feature_names)
+
+    # Encode categorical features
+    for col in categorical_features:
+        if col in data_df.columns:
+            # print("Column=", col)
+            # Decode using label encoder and replace placeholder with np.nan
+            data_df[col] = label_encoders[col].inverse_transform(data_df[col].astype(int))
+            data_df[col] = data_df[col].replace(NA, np.nan)
+
+    # Predict using the model
+    return model.predict(data_df)
+
+
+def random_observation_for_class(X, X_str_label_encoded, y, target_class, target, eatable_label, label_encoder,
+                                 label_encoders_for_X_str, original_feature_names, original_categorical_features_names,
+                                 model, plot=False):
+    """
+    Losuje obserwację z X_test dla zadanej klasy.
+
+    :param X: DataFrame z danymi testowymi.
+    :param y: Series lub lista z etykietami klas dla X_test.
+    :param target_class: Klasa, dla której losujemy obserwację.
+    :return: Indeks wylosowanej obserwacji.
+    """
+    indices = np.where(y == target_class)[0]
+    chosen_index = np.random.choice(indices)
+
+    instance: pd.DataFrame = X.drop(target, axis=1).iloc[chosen_index]
+    instance_str_label_encoded = X_str_label_encoded.drop(target, axis=1).iloc[chosen_index].values
+
+    if plot:
+        plot_numerical_distributions(X, observation_index=chosen_index)
+        plot_categorical_columns(X, y_df=y, label_encoder=label_encoder, target_name=target,
+                                 observation_index=chosen_index)
+
+    model_prediction = \
+        model_predict(model, instance_str_label_encoded, original_feature_names,
+                      original_categorical_features_names,
+                      label_encoders_for_X_str)[0]
+    print("Prediction=", "jadalny" if model_prediction == eatable_label else "trujący")
+
+    return chosen_index, instance, instance_str_label_encoded
+
+
+def generate_anchor_explanation(index, instance, explainer, model, model_predict_func, feature_names,
+                                categorical_features,
+                                label_encoders, eatable_label, max_attempts=3, NA="<NA>"):
+    """
+    Generates an explanation for a selected observation.
+
+    :param index: Index of the observation to explain.
+    :param instance: Series with observation to be explained.
+    :param explainer: AnchorTabularExplainer object.
+    :param model: Model to be explained.
+    :param model_predict_func: Function for model prediction.
+    :param feature_names: List of all feature names.
+    :param categorical_features: List of categorical feature names.
+    :param label_encoders: Dictionary of LabelEncoders for categorical features.
+    :param max_attempts: Maximum number of attempts to generate an explanation.
+    :return: Generated explanation.
+    """
+
+    best_exp = None
+    best_metric_for_exp = -1
+
+    for attempt in range(max_attempts):
+        exp = explainer.explain_instance(
+            instance,
+            lambda x: model_predict_func(model, x, feature_names, categorical_features, label_encoders),
+            threshold=0.95
+        )
+
+        if exp.coverage() > best_metric_for_exp:
+            best_exp = exp
+            best_metric_for_exp = exp.coverage() * exp.precision()
+
+    # Replace "<NA>" in best_exp names with the actual feature name
+    assert len(best_exp.names()) == len(best_exp.features()), "Length of names and features should match"
+    for i, feature_index in enumerate(best_exp.features()):
+        if best_exp.names()[i] == NA:
+            _feature_name = feature_names[feature_index]
+            best_exp.__dict__['exp_map']['names'][i] = "*" + _feature_name + " = " + NA
+        else:
+            if feature_names[feature_index] not in best_exp.names()[i]:
+                raise ValueError("Mismatch between feature names and explanation names.")
+
+    # Check if "<NA>" still exists in exp names
+    if "<NA>" in best_exp.names():
+        raise ValueError("Unresolved '<NA>' in explanation names.")
+
+    print("For observation#", index, "prediction=",
+          "jadalny" if model_predict_func(model, instance, feature_names, categorical_features, label_encoders)[
+                           0] == eatable_label else "trujący")
+    anchor_names = [name for name in best_exp.names() if name != "<NA>"]
+    print('Anchor: %s' % (' AND '.join(anchor_names)))
+    print('Precision: %.2f' % best_exp.precision())
+    print('Coverage: %.2f' % best_exp.coverage())
+
+    return best_exp
+
+
+def split_long_name(name: str, max_length: int = 50) -> str:
+    """
+    Splits a long name into two lines if it exceeds the maximum length.
+
+    :param name: The name to be split.
+    :param max_length: Maximum length of a single line.
+    :return: The name split into two lines if necessary.
+    """
+    if len(name) > max_length:
+        split_point = max_length // 2
+        return name[:split_point] + '-\n   ' + name[split_point:]
+    return name
+
+
+def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: pd.DataFrame, feature_names: list,
+                         NA="<NA>") -> None:
+    """
+    Compares a single observation with one or more comparison instances and prints the differences in a tabulated format.
+    Includes comparison with an imputed version of the original observation.
+
+    :param obs1: The original observation as a pandas Series or a single-row DataFrame.
+    :param obs1_imputed: The imputed version of the original observation.
+    :param obs2: DataFrame with one or more rows for comparison.
+    :param feature_names: List of feature names.
+    :param NA: Placeholder for missing values.
+    """
+    # Convert obs1 to DataFrame if it is a Series
+    if isinstance(obs1, pd.Series):
+        obs1 = obs1.to_frame().transpose()
+
+    # Ensure obs1 and obs1_imputed are single-row DataFrames
+    assert len(obs1) == 1, "obs1 must be a single-row DataFrame."
+    assert obs1_imputed is None or len(obs1_imputed) == 1, "obs1_imputed must be None or a single-row DataFrame."
+    assert isinstance(obs2, pd.DataFrame), "obs2 must be a pandas DataFrame."
+    assert all(feature in obs2.columns for feature in feature_names), "All feature names must be in obs2 columns."
+
+    # Extract the first row for comparison
+    obs1_row = obs1.iloc[0]
+    obs1_imputed_row = obs1_imputed.iloc[0] if obs1_imputed is not None else None
+
+    for index, row in obs2.iterrows():
+        print(f"\nComparison with instance {index}:")
+        print("Feature\t\t\t\t\t\t\t\t\t\tOriginal Value\t\t\t\t\tModified Value")
+        print("-" * 100)  # Print a separator line for better readability
+
+        for feature in feature_names:
+            feature_display = split_long_name(feature)
+            original_value = obs1_row[feature]
+            imputed_value = obs1_imputed_row[feature] if obs1_imputed_row is not None else None
+            modified_value = row[feature]
+
+            # Replace np.nan with NA and check for changes after imputation
+            original_value = NA if pd.isna(original_value) else original_value
+            imputed_value = NA if pd.isna(imputed_value) else imputed_value
+            modified_value = NA if pd.isna(modified_value) else modified_value
+
+            star_indicator = "**" if imputed_value != modified_value and imputed_value != NA else "* "
+
+            if original_value != modified_value:
+                print(
+                    f"{star_indicator if original_value == NA else '   '}{feature_display:40}\t{original_value:30}\t->\t{modified_value}")
+            else:
+                print(f"  {feature_display:40}\t{original_value}")
+
+# VERSION: 2024/12/14 - 12:08
