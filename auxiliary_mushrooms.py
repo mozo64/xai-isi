@@ -430,7 +430,7 @@ def plot_custom_pdp(model, X, feature_name, num_points=20):
     plt.show()
 
 
-def plot_numerical_distributions(df: pd.DataFrame, observation_index=None) -> None:
+def plot_numerical_distributions(df, observation_index=None):
     """
     Generates histograms and box plots for numerical columns in a DataFrame.
     Optionally adds a vertical line for a specified observation.
@@ -445,22 +445,26 @@ def plot_numerical_distributions(df: pd.DataFrame, observation_index=None) -> No
     for col in numerical_columns:
         fig, axes = plt.subplots(1, 2, figsize=(16, 4))
 
-        sns.histplot(df[col], kde=True, ax=axes[0])
-        axes[0].set_title(f'Histogram for {col}')
+        # Histogram with KDE
+        sns.histplot(df[col], kde=True, ax=axes[0], color='#C39BD3')  # Jasny fioletowy
+        axes[0].set_title(f'Histogram dla {col}')
         axes[0].set_ylabel('')
         axes[0].set_xlabel('')
 
+        # Highlighting the observation in histogram
         if observation_index is not None and col in df.columns:
             observation_value = df.iloc[observation_index][col]
-            axes[0].axvline(observation_value, color='red', linestyle='--')
+            axes[0].axvline(observation_value, color='#FFA07A', linestyle='--')  # Jasny pomarańczowy
 
-        sns.boxplot(x=df[col], ax=axes[1])
-        axes[1].set_title(f'Box Plot for {col}')
+        # Box plot
+        sns.boxplot(x=df[col], ax=axes[1], color='#C39BD3')  # Jasny fioletowy
+        axes[1].set_title(f'Wykres pudełkowy dla {col}')
         axes[1].set_ylabel('')
         axes[1].set_xlabel('')
 
+        # Highlighting the observation in box plot
         if observation_index is not None and col in df.columns:
-            axes[1].axvline(observation_value, color='red', linestyle='--')
+            axes[1].axvline(observation_value, color='#FFA07A', linestyle='--')  # Jasny pomarańczowy
 
         plt.show()
 
@@ -508,14 +512,19 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
         sns.countplot(y=temp_series, ax=axes[row, col_pos], order=order)
         axes[row, col_pos].set_title(f'\n{col}')
 
-        # Highlighting the bar for the selected observation
-        if observation_index is not None and col in df.columns:
-            observation_value = df.iloc[observation_index][col]
-            if pd.isna(observation_value):
-                observation_value = NA
-            for bar, label in zip(axes[row, col_pos].patches, order):
+        # Setting colors and highlighting the bar for the selected observation
+        for bar, label in zip(axes[row, col_pos].patches, order):
+            if label == NA:
+                bar.set_color('#D3D3D3')  # Jasnoszary dla <NA>
+            else:
+                bar.set_color('#C39BD3')  # Jasny fioletowy dla pozostałych słupków
+            if observation_index is not None and col in df.columns:
+                observation_value = df.iloc[observation_index][col]
+                if pd.isna(observation_value):
+                    observation_value = NA
                 if label == observation_value:
-                    bar.set_color('red')
+                    bar.set_edgecolor('#FFA07A')  # Jasny pomarańczowy dla ramki
+                    bar.set_linewidth(2)
 
         axes[row, col_pos].set_ylabel('')  # Removing y-axis label
         axes[row, col_pos].set_xlabel('')  # Removing x-axis label
@@ -580,4 +589,4 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, class_l
 
     return selected_index
 
-# VERSION: 2024/12/01 - 13:54
+# VERSION: 2024/12/14 - 07:02
