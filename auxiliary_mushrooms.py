@@ -1128,7 +1128,7 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
     #     f'\nWartości negatywne (w lewo):  wpływ cechy na klasyfikację grzyba {opposite_class}. '
     #     f'\nŚrednia przewidywana wartość wyniku modelu to E[f(X)], a końcowy wynik dla tej obserwacji to f(X). ')
     plt.xlabel('Wkład poszczególnych cech w przewidywanie klasy grzyba przez model. '
-               f'\nWartości pozytywne (w prawo) wskazują na wzrost prawdopodobieństwa \nklasyfikacji jako {this_class} '
+               '\nWartości pozytywne (w prawo) wskazują na wzrost prawdopodobieństwa \nklasyfikacji jako "trującego" '  # {this_class}
                'wg modelu, wartości negatywne (w lewo) - na zmniejszenie. '
                '\nE[f(X)] to średni wynik modelu, a f(X) to przewidywanie dla tej obserwacji.\n')
 
@@ -1142,4 +1142,4 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
 
     return selected_index
 
-# VERSION: 2024/12/14 - 14:46
+# VERSION: 2024/12/15 - 07:31
