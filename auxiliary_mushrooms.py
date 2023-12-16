@@ -1,6 +1,7 @@
 import os
 import random
 import re
+from builtins import ValueError
 from typing import List
 
 import matplotlib.pyplot as plt
@@ -1084,7 +1085,8 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
 
     # Reshaping the selected observation if necessary
     if isinstance(selected_observation, np.ndarray):
-        X_sample_for_shap = transformed_X
+        # X_sample_for_shap = transformed_X
+        raise ValueError()
     else:
         X_sample_for_shap = selected_observation.toarray()
 
@@ -1101,8 +1103,8 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
     # Creating an Explanation object with feature names
     shap_values_single = shap_explanation[0]
     shap_values_single = shap.Explanation(values=shap_values_single.values,
-                                          base_values=shap_values_single.base_values,
-                                          data=shap_values_single.data,
+                                          base_values=shap_values_single.base_values, # calay dataset
+                                          data=shap_values_single.data, # calay dataset
                                           feature_names=a_feature_names)
 
     # Getting the class name from label encoder
