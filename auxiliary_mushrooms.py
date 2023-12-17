@@ -476,7 +476,7 @@ def plot_numerical_distributions(df, observation_index=None):
 
 
 def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, target_name=None, observation_index=None,
-                             NA: str = "<NA>") -> None:
+                             NA: str = "_NA_") -> None:
     """
     Generates bar plots for categorical columns in a DataFrame.
     Optionally highlights the bar corresponding to a specified observation.
@@ -484,7 +484,7 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
     Args:
     df (pd.DataFrame): DataFrame for which the plots are to be generated.
     observation_index (int, optional): Index of the observation to highlight.
-    NA (str, optional): Representation for missing data. Defaults to "<NA>".
+    NA (str, optional): Representation for missing data. Defaults to "_NA_".
     """
 
     if y_df is not None and label_encoder is not None and target_name is not None:
@@ -521,7 +521,7 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
         # Setting colors and highlighting the bar for the selected observation
         for bar, label in zip(axes[row, col_pos].patches, order):
             if label == NA:
-                bar.set_color('#D3D3D3')  # Jasnoszary dla <NA>
+                bar.set_color('#D3D3D3')  # Jasnoszary dla _NA_
             else:
                 bar.set_color('#C39BD3')  # Jasny fioletowy dla pozostałych słupków
             if observation_index is not None and col in df.columns:
@@ -880,7 +880,7 @@ def plot_lime_importances(importances, model, categorical_features, category_enc
 
 
 def model_predict(model, data: np.ndarray, feature_names: list, categorical_features: list, label_encoders: dict,
-                  NA: str = "<NA>") -> np.ndarray:
+                  NA: str = "_NA_") -> np.ndarray:
     """
     Wrapper function for model prediction.
 
@@ -943,7 +943,7 @@ def random_observation_for_class(X, X_str_label_encoded, y, target_class, target
 
 def generate_anchor_explanation(index, instance, explainer, model, model_predict_func, feature_names,
                                 categorical_features,
-                                label_encoders, eatable_label, max_attempts=3, NA="<NA>"):
+                                label_encoders, eatable_label, max_attempts=3, NA="_NA_"):
     """
     Generates an explanation for a selected observation.
 
@@ -973,7 +973,7 @@ def generate_anchor_explanation(index, instance, explainer, model, model_predict
             best_exp = exp
             best_metric_for_exp = exp.coverage() * exp.precision()
 
-    # Replace "<NA>" in best_exp names with the actual feature name
+    # Replace "_NA_" in best_exp names with the actual feature name
     assert len(best_exp.names()) == len(best_exp.features()), "Length of names and features should match"
     for i, feature_index in enumerate(best_exp.features()):
         if best_exp.names()[i] == NA:
@@ -983,14 +983,14 @@ def generate_anchor_explanation(index, instance, explainer, model, model_predict
             if feature_names[feature_index] not in best_exp.names()[i]:
                 raise ValueError("Mismatch between feature names and explanation names.")
 
-    # Check if "<NA>" still exists in exp names
-    if "<NA>" in best_exp.names():
-        raise ValueError("Unresolved '<NA>' in explanation names.")
+    # Check if "_NA_" still exists in exp names
+    if "_NA_" in best_exp.names():
+        raise ValueError("Unresolved '_NA_' in explanation names.")
 
     print("For observation#", index, "prediction=",
           "jadalny" if model_predict_func(model, instance, feature_names, categorical_features, label_encoders)[
                            0] == eatable_label else "trujący")
-    anchor_names = [name for name in best_exp.names() if name != "<NA>"]
+    anchor_names = [name for name in best_exp.names() if name != "_NA_"]
     print('Anchor: %s' % (' AND '.join(anchor_names)))
     print('Precision: %.2f' % best_exp.precision())
     print('Coverage: %.2f' % best_exp.coverage())
@@ -1013,7 +1013,7 @@ def split_long_name(name: str, max_length: int = 50) -> str:
 
 
 def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: pd.DataFrame, feature_names: list,
-                         NA="<NA>") -> None:
+                         NA="_NA_") -> None:
     """
     Compares a single observation with one or more comparison instances and prints the differences in a tabulated format.
     Includes comparison with an imputed version of the original observation.
@@ -1144,4 +1144,4 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
 
     return selected_index
 
-# VERSION: 2024/12/17 - 11:03
+# VERSION: 2024/12/17 - 11:37
