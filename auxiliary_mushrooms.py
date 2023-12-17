@@ -73,7 +73,7 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
     assert translation in ["none", "polish", "both"], "translation should be one of: \"none\", \"polish\", \"both\""
 
     def take_second_part(value: str):
-        return value.split('--')[1]
+        return value.split('__')[1]
 
     def identity(value: str):
         return value
@@ -91,7 +91,7 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
 
     # Rename numerical columns to include units
     decoded_df.rename(
-        columns={'cap-diameter': 'cap-diameter-cm', 'stem-height': 'stem-height-cm', 'stem-width': 'stem-width-mm'},
+        columns={'cap-diameter': 'cap_diameter_cm', 'stem-height': 'stem_height_cm', 'stem-width': 'stem_width_mm'},
         inplace=True)
 
     # Define dictionaries for each categorical column
@@ -102,7 +102,7 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
                         'k': 'silky', 't': 'sticky', 'w': 'wrinkled', 'e': 'fleshy'}
     cap_color_dict = {'n': 'brown', 'b': 'buff', 'g': 'gray', 'r': 'green', 'p': 'pink', 'u': 'purple', 'e': 'red',
                       'w': 'white', 'y': 'yellow', 'l': 'blue', 'o': 'orange', 'k': 'black'}
-    bruises_bleeding_dict = {'t': 'bruises-or-bleeding', 'f': 'no-bruises-or-bleeding'}
+    bruises_bleeding_dict = {'t': 'bruises_or_bleeding', 'f': 'no_bruises_or_bleeding'}
     gill_attachment_dict = {'a': 'adnate', 'x': 'adnexed', 'd': 'decurrent', 'e': 'free', 's': 'sinuate', 'p': 'pores',
                             'f': 'none', 'u': 'unknown'}
     gill_spacing_dict = {'c': 'close', 'd': 'distant', 'f': 'none'}
@@ -129,27 +129,27 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
     if translate_to_polish:
         # Polish translations for column names
         column_translations = {
-            'cap-diameter-cm': 'cap-diameter-cm--średnica-kapelusza-cm',
-            'stem-height-cm': 'stem-height-cm--wysokość-trzonu-cm',
-            'stem-width-mm': 'stem-width-mm--szerokość-trzonu-mm',
-            'class': 'class--klasa',
-            'cap-shape': 'cap-shape--kształt-kapelusza',
-            'cap-surface': 'cap-surface--powierzchnia-kapelusza',
-            'cap-color': 'cap-color--kolor-kapelusza',
-            'does-bruise-or-bleed': 'does-bruise-or-bleed--zmienia-kolor-lub-puszcza-mleczko-w-reakcji-na-uszkodzenie',
-            'gill-attachment': 'gill-attachment--sposób-przyrastania-blaszek-do-trzonu',
-            'gill-spacing': 'gill-spacing--gęstość-blaszek',
-            'gill-color': 'gill-color--kolor-blaszek',
-            'stem-root': 'stem-root--podstawa-trzonu',
-            'stem-surface': 'stem-surface--powierzchnia-trzonu',
-            'stem-color': 'stem-color--kolor-trzonu',
-            'veil-type': 'veil-type--typ-hymenoforu',
-            'veil-color': 'veil-color--kolor-hymenoforu',
-            'has-ring': 'has-ring--obecność-pierścienia',
-            'ring-type': 'ring-type--typ-pierścienia',
-            'spore-print-color': 'spore-print-color--kolor-zarodników',
-            'habitat': 'habitat--siedlisko',
-            'season': 'season--pora-roku'
+            'cap_diameter_cm': 'cap_diameter_cm__średnica_kapelusza_cm',
+            'stem_height_cm': 'stem_height_cm__wysokość_trzonu_cm',
+            'stem_width_mm': 'stem_width_mm__szerokość_trzonu_mm',
+            'class': 'class__klasa',
+            'cap-shape': 'cap_shape__kształt_kapelusza',
+            'cap-surface': 'cap_surface__powierzchnia_kapelusza',
+            'cap-color': 'cap_color__kolor_kapelusza',
+            'does-bruise-or-bleed': 'does_bruise_or_bleed__zmienia_kolor_lub_puszcza_mleczko_w_reakcji_na_uszkodzenie',
+            'gill-attachment': 'gill_attachment__sposób_przyrastania_blaszek_do_trzonu',
+            'gill-spacing': 'gill_spacing__gęstość_blaszek',
+            'gill-color': 'gill_color__kolor_blaszek',
+            'stem-root': 'stem_root__podstawa_trzonu',
+            'stem-surface': 'stem_surface__powierzchnia_trzonu',
+            'stem-color': 'stem_color__kolor_trzonu',
+            'veil-type': 'veil_type__typ_hymenoforu',
+            'veil-color': 'veil_color__kolor_hymenoforu',
+            'has-ring': 'has_ring__obecność_pierścienia',
+            'ring-type': 'ring_type__typ_pierścienia',
+            'spore-print-color': 'spore_print_color__kolor_zarodników',
+            'habitat': 'habitat__siedlisko',
+            'season': 'season__pora_roku'
         }
         column_translations_bis = {}
         for key, value in column_translations.items():
@@ -168,8 +168,8 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
         cap_color_dict_pl = {'brown': 'brązowy', 'buff': 'jasnobrązowy', 'gray': 'szary', 'green': 'zielony',
                              'pink': 'różowy', 'purple': 'fioletowy', 'red': 'czerwony', 'white': 'biały',
                              'yellow': 'żółty', 'blue': 'niebieski', 'orange': 'pomarańczowy', 'black': 'czarny'}
-        bruises_bleeding_dict_pl = {'bruises-or-bleeding': 'zmienia-kolor-lub-puszcza-mleczko',
-                                    'no-bruises-or-bleeding': 'nie-zmienia-koloru-lub-brak-mleczka'}
+        bruises_bleeding_dict_pl = {'bruises_or_bleeding': 'zmienia_kolor_lub_puszcza_mleczko',
+                                    'no_bruises_or_bleeding': 'nie_zmienia_koloru_lub_brak_mleczka'}
         gill_attachment_dict_pl = {'adnate': 'przyrośnięte', 'adnexed': 'wykrojone', 'decurrent': 'zbiegające',
                                    'free': 'wolne', 'sinuate': 'faliste', 'pores': 'pory', 'none': 'brak',
                                    'unknown': 'nieznane'}
@@ -180,7 +180,7 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
                              'rooted': 'korzeniasty'}
         stem_surface_dict_pl = {**cap_surface_dict_pl, 'none': 'brak'}
         stem_color_dict_pl = {**cap_color_dict_pl, 'none': 'brak'}
-        veil_type_dict_pl = {'partial': 'z-zasnówką', 'universal': 'bez-zasnówki'}
+        veil_type_dict_pl = {'partial': 'z_zasnówką', 'universal': 'bez_zasnówki'}
         veil_color_dict_pl = {**cap_color_dict_pl, 'none': 'brak'}
         has_ring_dict_pl = {'ring': 'pierścień', 'none': 'brak'}
         ring_type_dict_pl = {'cobwebby': 'pajęczynowaty', 'evanescent': 'nietrwały', 'flaring': 'wzniesiony',
@@ -193,27 +193,27 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
         season_dict_pl = {'spring': 'wiosna', 'summer': 'lato', 'autumn': 'jesień', 'winter': 'zima'}
 
         # Apply Polish translations to dictionaries
-        class_dict = {k: transformation(f"{v}--{class_dict_pl[v]}") for k, v in class_dict.items()}
-        cap_shape_dict = {k: transformation(f"{v}--{cap_shape_dict_pl[v]}") for k, v in cap_shape_dict.items()}
-        cap_surface_dict = {k: transformation(f"{v}--{cap_surface_dict_pl[v]}") for k, v in cap_surface_dict.items()}
-        cap_color_dict = {k: transformation(f"{v}--{cap_color_dict_pl[v]}") for k, v in cap_color_dict.items()}
-        bruises_bleeding_dict = {k: transformation(f"{v}--{bruises_bleeding_dict_pl[v]}") for k, v in
+        class_dict = {k: transformation(f"{v}__{class_dict_pl[v]}") for k, v in class_dict.items()}
+        cap_shape_dict = {k: transformation(f"{v}__{cap_shape_dict_pl[v]}") for k, v in cap_shape_dict.items()}
+        cap_surface_dict = {k: transformation(f"{v}__{cap_surface_dict_pl[v]}") for k, v in cap_surface_dict.items()}
+        cap_color_dict = {k: transformation(f"{v}__{cap_color_dict_pl[v]}") for k, v in cap_color_dict.items()}
+        bruises_bleeding_dict = {k: transformation(f"{v}__{bruises_bleeding_dict_pl[v]}") for k, v in
                                  bruises_bleeding_dict.items()}
-        gill_attachment_dict = {k: transformation(f"{v}--{gill_attachment_dict_pl[v]}") for k, v in
+        gill_attachment_dict = {k: transformation(f"{v}__{gill_attachment_dict_pl[v]}") for k, v in
                                 gill_attachment_dict.items()}
-        gill_spacing_dict = {k: transformation(f"{v}--{gill_spacing_dict_pl[v]}") for k, v in gill_spacing_dict.items()}
-        gill_color_dict = {k: transformation(f"{v}--{gill_color_dict_pl[v]}") for k, v in gill_color_dict.items()}
-        stem_root_dict = {k: transformation(f"{v}--{stem_root_dict_pl[v]}") for k, v in stem_root_dict.items()}
-        stem_surface_dict = {k: transformation(f"{v}--{stem_surface_dict_pl[v]}") for k, v in stem_surface_dict.items()}
-        stem_color_dict = {k: transformation(f"{v}--{stem_color_dict_pl[v]}") for k, v in stem_color_dict.items()}
-        veil_type_dict = {k: transformation(f"{v}--{veil_type_dict_pl[v]}") for k, v in veil_type_dict.items()}
-        veil_color_dict = {k: transformation(f"{v}--{veil_color_dict_pl[v]}") for k, v in veil_color_dict.items()}
-        has_ring_dict = {k: transformation(f"{v}--{has_ring_dict_pl[v]}") for k, v in has_ring_dict.items()}
-        ring_type_dict = {k: transformation(f"{v}--{ring_type_dict_pl[v]}") for k, v in ring_type_dict.items()}
-        spore_print_color_dict = {k: transformation(f"{v}--{spore_print_color_dict_pl[v]}") for k, v in
+        gill_spacing_dict = {k: transformation(f"{v}__{gill_spacing_dict_pl[v]}") for k, v in gill_spacing_dict.items()}
+        gill_color_dict = {k: transformation(f"{v}__{gill_color_dict_pl[v]}") for k, v in gill_color_dict.items()}
+        stem_root_dict = {k: transformation(f"{v}__{stem_root_dict_pl[v]}") for k, v in stem_root_dict.items()}
+        stem_surface_dict = {k: transformation(f"{v}__{stem_surface_dict_pl[v]}") for k, v in stem_surface_dict.items()}
+        stem_color_dict = {k: transformation(f"{v}__{stem_color_dict_pl[v]}") for k, v in stem_color_dict.items()}
+        veil_type_dict = {k: transformation(f"{v}__{veil_type_dict_pl[v]}") for k, v in veil_type_dict.items()}
+        veil_color_dict = {k: transformation(f"{v}__{veil_color_dict_pl[v]}") for k, v in veil_color_dict.items()}
+        has_ring_dict = {k: transformation(f"{v}__{has_ring_dict_pl[v]}") for k, v in has_ring_dict.items()}
+        ring_type_dict = {k: transformation(f"{v}__{ring_type_dict_pl[v]}") for k, v in ring_type_dict.items()}
+        spore_print_color_dict = {k: transformation(f"{v}__{spore_print_color_dict_pl[v]}") for k, v in
                                   spore_print_color_dict.items()}
-        habitat_dict = {k: transformation(f"{v}--{habitat_dict_pl[v]}") for k, v in habitat_dict.items()}
-        season_dict = {k: transformation(f"{v}--{season_dict_pl[v]}") for k, v in season_dict.items()}
+        habitat_dict = {k: transformation(f"{v}__{habitat_dict_pl[v]}") for k, v in habitat_dict.items()}
+        season_dict = {k: transformation(f"{v}__{season_dict_pl[v]}") for k, v in season_dict.items()}
 
     # Apply the dictionaries to decode each categorical column
     decoded_df['class'] = decoded_df['class'].map(class_dict)
@@ -268,11 +268,11 @@ def calculate_global_importances(sample_indices, explainer, X_test_reset, best_m
 
 
 def wrap_title(label):
-    return '\n'.join(label.split('--')).replace('-', ' ')
+    return '\n'.join(label.split('__')).replace('_', ' ')
 
 
 def wrap_labels(label, max_words_per_line=7):
-    lines = '\n'.join(label.split('--')).replace('-', '\n')
+    lines = '\n'.join(label.split('__')).replace('_', '\n')
     words = lines.split('.')
     return '\n'.join([' '.join(words[i:i + max_words_per_line]) for i in range(0, len(words), max_words_per_line)])
 
@@ -823,11 +823,11 @@ def get_decoded_feature(feature, categorical_features, category_encodings):
             if idx in reverse_mapping:
                 value = reverse_mapping[idx]
                 if pd.isna(value):  # Sprawdzenie, czy wartość jest NaN
-                    decoded_values.append("brak-danych")
+                    decoded_values.append("brak_danych")
                 else:
                     decoded_values.append(value)
             else:
-                decoded_values.append("brak-danych")
+                decoded_values.append("brak_danych")
         decoded_feature = f"{feature_name} == {{{', '.join(decoded_values)}}}"
     else:
         decoded_feature = feature
@@ -1008,7 +1008,7 @@ def split_long_name(name: str, max_length: int = 50) -> str:
     """
     if len(name) > max_length:
         split_point = max_length // 2
-        return name[:split_point] + '-\n   ' + name[split_point:]
+        return name[:split_point] + '_\n   ' + name[split_point:]
     return name
 
 
@@ -1144,4 +1144,4 @@ def plot_shap_waterfall_for_class(model, X, y, explainer, label_encoder, eatable
 
     return selected_index
 
-# VERSION: 2024/12/15 - 07:31
+# VERSION: 2024/12/17 - 11:03
