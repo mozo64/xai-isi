@@ -884,7 +884,8 @@ def plot_lime_importances(importances, model, categorical_features, category_enc
     features, scores = zip(*sorted_features.items())
 
     plt.figure(figsize=(12, 8))
-    bars = plt.barh(features, scores, color='green')  # Zmiana koloru słupków
+    # bars = plt.barh(features, scores, color='green')  # Zmiana koloru słupków
+    bars = plt.barh(features, scores, color=['red' if score > 0 else 'blue' for score in scores])
     # plt.xlabel('Średnie znaczenie cechy (jadalny <- | -> trujący)')
     plt.title('Wpływ cech na predykcję klasyfikacji grzybów na podstawie LIME')
 
