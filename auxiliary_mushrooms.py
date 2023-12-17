@@ -486,15 +486,16 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
     observation_index (int, optional): Index of the observation to highlight.
     NA (str, optional): Representation for missing data. Defaults to "_NA_".
     """
+    df_cp = df.copy()
 
     if y_df is not None and label_encoder is not None and target_name is not None:
         inverse_label_map = {v: k for v, k in enumerate(label_encoder.classes_)}
-        df[target_name] = np.vectorize(inverse_label_map.get)(y_df)
-        cols = [target_name] + [col for col in df.columns if col != target_name]
-        df = df[cols]
+        df_cp[target_name] = np.vectorize(inverse_label_map.get)(y_df)
+        cols = [target_name] + [col for col in df_cp.columns if col != target_name]
+        df_cp = df_cp[cols]
 
     print("\nBar Plots for Categorical Columns:")
-    categorical_columns = df.select_dtypes(include=['object']).columns
+    categorical_columns = df_cp.select_dtypes(include=['object']).columns
 
     num_vars = len(categorical_columns)
     num_rows = (num_vars + 2) // 3
@@ -506,7 +507,7 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
         col_pos = i % 3
 
         # Adding category for missing data
-        temp_series = df[col].fillna(NA)
+        temp_series = df_cp[col].fillna(NA)
 
         # Sorting labels by frequency except for 'Missing data'
         order = temp_series.value_counts().index.tolist()
@@ -524,8 +525,8 @@ def plot_categorical_columns(df: pd.DataFrame, y_df=None, label_encoder=None, ta
                 bar.set_color('#D3D3D3')  # Jasnoszary dla _NA_
             else:
                 bar.set_color('#C39BD3')  # Jasny fioletowy dla pozostałych słupków
-            if observation_index is not None and col in df.columns:
-                observation_value = df.iloc[observation_index][col]
+            if observation_index is not None and col in df_cp.columns:
+                observation_value = df_cp.iloc[observation_index][col]
                 if pd.isna(observation_value):
                     observation_value = NA
                 if label == observation_value:
@@ -1097,4 +1098,4 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
             else:
                 print(f"  {feature_display:40}\t{str(original_value):30}")
 
-# VERSION: 2024/12/17 - 13:42
+# VERSION: 2024/12/17 - 13:57
