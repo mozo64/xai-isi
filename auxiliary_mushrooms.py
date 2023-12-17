@@ -1093,8 +1093,8 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
 
             if original_value != modified_value:
                 print(
-                    f"{star_indicator if original_value == NA else '   '}{feature_display:40}\t{original_value:30}\t->\t{modified_value}")
+                    f"{star_indicator if original_value == NA else '  '}{feature_display:40}\t{str(original_value):30}\t->\t{str(modified_value):30}")
             else:
-                print(f"  {feature_display:40}\t{original_value}")
+                print(f"  {feature_display:40}\t{str(original_value):30}")
 
-# VERSION: 2024/12/17 - 12:50
+# VERSION: 2024/12/17 - 13:42
