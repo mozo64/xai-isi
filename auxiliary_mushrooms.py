@@ -2,7 +2,7 @@ import os
 import random
 import re
 from builtins import ValueError
-from typing import List
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,11 +45,11 @@ def process_primary_data(file_path: str) -> pd.DataFrame:
         raise ValueError(f"Error processing file '{file_path}': {e}")
 
 
-def process_secondary_data(file_path: str) -> pd.DataFrame:
+def process_secondary_data(file_path: str, string_columns: Optional[List]) -> pd.DataFrame:
     try:
         df = pd.read_csv(file_path, sep=';')
 
-        string_columns = [
+        string_columns = string_columns or [
             'class', 'cap-shape', 'cap-surface', 'cap-color', 'does-bruise-or-bleed',
             'gill-attachment', 'gill-spacing', 'gill-color', 'stem-root', 'stem-surface',
             'stem-color', 'veil-type', 'veil-color', 'has-ring', 'ring-type',
@@ -215,29 +215,49 @@ def decode_categorical_values(df: pd.DataFrame, translation: str = "both") -> pd
         habitat_dict = {k: transformation(f"{v}__{habitat_dict_pl[v]}") for k, v in habitat_dict.items()}
         season_dict = {k: transformation(f"{v}__{season_dict_pl[v]}") for k, v in season_dict.items()}
 
-    # Apply the dictionaries to decode each categorical column
-    decoded_df['class'] = decoded_df['class'].map(class_dict)
-    decoded_df['cap-shape'] = decoded_df['cap-shape'].map(cap_shape_dict)
-    decoded_df['cap-surface'] = decoded_df['cap-surface'].map(cap_surface_dict)
-    decoded_df['cap-color'] = decoded_df['cap-color'].map(cap_color_dict)
-    decoded_df['does-bruise-or-bleed'] = decoded_df['does-bruise-or-bleed'].map(bruises_bleeding_dict)
-    decoded_df['gill-attachment'] = decoded_df['gill-attachment'].map(gill_attachment_dict)
-    decoded_df['gill-spacing'] = decoded_df['gill-spacing'].map(gill_spacing_dict)
-    decoded_df['gill-color'] = decoded_df['gill-color'].map(gill_color_dict)
-    decoded_df['stem-root'] = decoded_df['stem-root'].map(stem_root_dict)
-    decoded_df['stem-surface'] = decoded_df['stem-surface'].map(stem_surface_dict)
-    decoded_df['stem-color'] = decoded_df['stem-color'].map(stem_color_dict)
-    decoded_df['veil-type'] = decoded_df['veil-type'].map(veil_type_dict)
-    decoded_df['veil-color'] = decoded_df['veil-color'].map(veil_color_dict)
-    decoded_df['has-ring'] = decoded_df['has-ring'].map(has_ring_dict)
-    decoded_df['ring-type'] = decoded_df['ring-type'].map(ring_type_dict)
-    decoded_df['spore-print-color'] = decoded_df['spore-print-color'].map(spore_print_color_dict)
-    decoded_df['habitat'] = decoded_df['habitat'].map(habitat_dict)
-    decoded_df['season'] = decoded_df['season'].map(season_dict)
+    # Apply the dictionaries to decode each categorical column only if they exist
+    if 'class' in decoded_df.columns:
+        decoded_df['class'] = decoded_df['class'].map(class_dict)
+    if 'cap-shape' in decoded_df.columns:
+        decoded_df['cap-shape'] = decoded_df['cap-shape'].map(cap_shape_dict)
+    if 'cap-surface' in decoded_df.columns:
+        decoded_df['cap-surface'] = decoded_df['cap-surface'].map(cap_surface_dict)
+    if 'cap-color' in decoded_df.columns:
+        decoded_df['cap-color'] = decoded_df['cap-color'].map(cap_color_dict)
+    if 'does-bruise-or-bleed' in decoded_df.columns:
+        decoded_df['does-bruise-or-bleed'] = decoded_df['does-bruise-or-bleed'].map(bruises_bleeding_dict)
+    if 'gill-attachment' in decoded_df.columns:
+        decoded_df['gill-attachment'] = decoded_df['gill-attachment'].map(gill_attachment_dict)
+    if 'gill-spacing' in decoded_df.columns:
+        decoded_df['gill-spacing'] = decoded_df['gill-spacing'].map(gill_spacing_dict)
+    if 'gill-color' in decoded_df.columns:
+        decoded_df['gill-color'] = decoded_df['gill-color'].map(gill_color_dict)
+    if 'stem-root' in decoded_df.columns:
+        decoded_df['stem-root'] = decoded_df['stem-root'].map(stem_root_dict)
+    if 'stem-surface' in decoded_df.columns:
+        decoded_df['stem-surface'] = decoded_df['stem-surface'].map(stem_surface_dict)
+    if 'stem-color' in decoded_df.columns:
+        decoded_df['stem-color'] = decoded_df['stem-color'].map(stem_color_dict)
+    if 'veil-type' in decoded_df.columns:
+        decoded_df['veil-type'] = decoded_df['veil-type'].map(veil_type_dict)
+    if 'veil-color' in decoded_df.columns:
+        decoded_df['veil-color'] = decoded_df['veil-color'].map(veil_color_dict)
+    if 'has-ring' in decoded_df.columns:
+        decoded_df['has-ring'] = decoded_df['has-ring'].map(has_ring_dict)
+    if 'ring-type' in decoded_df.columns:
+        decoded_df['ring-type'] = decoded_df['ring-type'].map(ring_type_dict)
+    if 'spore-print-color' in decoded_df.columns:
+        decoded_df['spore-print-color'] = decoded_df['spore-print-color'].map(spore_print_color_dict)
+    if 'habitat' in decoded_df.columns:
+        decoded_df['habitat'] = decoded_df['habitat'].map(habitat_dict)
+    if 'season' in decoded_df.columns:
+        decoded_df['season'] = decoded_df['season'].map(season_dict)
 
     if translate_to_polish:
-        # Rename columns with Polish translations
-        decoded_df = decoded_df.rename(columns=column_translations)
+        # Apply translations to column names
+        for col in column_translations.keys():
+            if col in decoded_df.columns:
+                decoded_df.rename(columns={col: column_translations[col]}, inplace=True)
 
     return decoded_df
 
@@ -1098,4 +1118,4 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
             else:
                 print(f"  {feature_display:40}\t{str(original_value):30}")
 
-# VERSION: 2024/12/17 - 13:57
+# VERSION: 2024/01/11 - 12:55
