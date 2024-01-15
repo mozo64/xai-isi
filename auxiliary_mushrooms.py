@@ -1095,8 +1095,8 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
     obs1_imputed_row = obs1_imputed.iloc[0] if obs1_imputed is not None else None
 
     for index, row in obs2.iterrows():
-        print(f"\nComparison with instance {index}:")
-        print("Feature\t\t\t\t\t\t\t\t\t\tOriginal Value\t\t\t\t\tModified Value")
+        print(f"\nPorównanie z obserwacją numer #{index}:")
+        print("Cecha\t\t\t\t\t\t\t\t\t\tWartość oryginalna\t\t\t\t\tWartość zmodyfikowana")
         print("-" * 100)  # Print a separator line for better readability
 
         for feature in feature_names:
@@ -1118,4 +1118,4 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
             else:
                 print(f"  {feature_display:40}\t{str(original_value):30}")
 
-# VERSION: 2024/01/15 - 10:51
+# VERSION: 2024/01/15 - 16:12
