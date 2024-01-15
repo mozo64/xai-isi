@@ -980,8 +980,8 @@ def random_observation_for_class(X, X_str_label_encoded, y, target_class, target
     indices = np.where(y == target_class)[0]
     chosen_index = np.random.choice(indices)
 
-    instance: pd.DataFrame = X.drop(target, axis=1).iloc[chosen_index]
-    instance_str_label_encoded = X_str_label_encoded.drop(target, axis=1).iloc[chosen_index].values
+    instance: pd.DataFrame = X.drop(target, axis=1, errors='ignore').iloc[chosen_index]
+    instance_str_label_encoded = X_str_label_encoded.drop(target, axis=1, errors='ignore').iloc[chosen_index].values
 
     if plot:
         plot_numerical_distributions(X, observation_index=chosen_index)
@@ -1118,4 +1118,4 @@ def compare_observations(obs1: pd.DataFrame, obs1_imputed: pd.DataFrame, obs2: p
             else:
                 print(f"  {feature_display:40}\t{str(original_value):30}")
 
-# VERSION: 2024/01/15 - 09:45
+# VERSION: 2024/01/15 - 10:51
